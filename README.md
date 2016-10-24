@@ -8,16 +8,15 @@ This python script turns the Caps Lock key into a 'modifier'.
 
 ### Installation
 - you will need xdotool for input manipulation<br>
-(if you do not have superuser rights, you can also download it and compile yourself)
+(if you do not have superuser rights, you can also download it and compile it yourself)
 <pre>sudo apt-get install xdotool</pre>
-
-- clone this repository to a path_of_your_choice.
+- clone this repository to a path_of_your_choice.<br>
 <pre>git clone https://github.com/soeiner/homerow-arrowkeys.git path_of_your_choice</pre>
-- change working directory to the git clone directory
+- change working directory to the git clone directory<br>
 <pre>cd path_of_your_choice</pre>
-- make it executable
+- make it executable<br>
 <pre>chmod +x mainloop.py</pre>
-- test it
+- test it<br>
 <pre><br>./mainloop.py &</pre>
 now open an editor and try pressing some keys with and without caps held down.
 - add it to start up (tested on Ubuntu based systems)<br>
