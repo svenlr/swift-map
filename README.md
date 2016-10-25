@@ -9,7 +9,7 @@ This python script turns the Caps Lock key into a 'modifier'.
 ## Installation
 - you will need xdotool for input manipulation<br>
 (if you do not have superuser rights, you can also download it and compile it yourself)
-<pre>sudo apt-get install xdotool</pre>
+<pre>sudo apt-get install xdotool python-xlib</pre>
 
 - clone this repository to a path_of_your_choice.
 <pre>git clone https://github.com/soeiner/homerow-arrowkeys.git path_of_your_choice</pre>
