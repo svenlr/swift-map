@@ -4,11 +4,12 @@ import time
 import os
 import threading
 import pyxhook
+import socket
 
 time.sleep(5)
 
 os.path.join(os.path.dirname(__file__), '..')
-os.system("xmodmap ./Xmodmap")
+os.system("xmodmap Xmodmap")
 
 mod_release_lock = threading.Lock()
 pressed_keys = []
@@ -94,9 +95,15 @@ hookman.KeyUp = handle_key_event
 hookman.HookKeyboard()
 hookman.start()
 
+s = socket.socket()
+s.bind(("localhost", 24679))
+s.listen(1)
+
 while True:
     try:
-        time.sleep(1000)
+        s.accept()
+        os.system("xmodmap Xmodmap")
+        print "test"
     except KeyboardInterrupt:
         break
 

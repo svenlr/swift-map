@@ -15,9 +15,12 @@ This python script turns the Caps Lock key into a 'modifier'.
 - change working directory to the git clone directory<br>
 <pre>cd path_of_your_choice</pre>
 - make it executable<br>
-<pre>chmod +x mainloop.py</pre>
+<pre>chmod +x mainloop.py resume.py</pre>
 - test it<br>
 <pre><br>./mainloop.py &</pre>
 now open an editor and try pressing some keys with and without caps held down.
 - add it to start up (tested on Ubuntu based systems)<br>
 Go to the launcher and open the program 'Startup Applications'.<br>Click on 'Add'.<br>Enter some name.<br>Click on 'Browse'.<br>Navigate to 'mainloop.py'.
+
+- add it to after resume execution
+<pre>sudo cp resume.py /etc/pm/sleep.d/</pre>
