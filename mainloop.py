@@ -6,68 +6,94 @@ import threading
 import pyxhook
 import socket
 
-time.sleep(5)
+# whether (Caps Lock) is pressed
+modifier = False
+modifier_lock = threading.Lock()
 
-os.chdir(os.path.dirname(__file__))
-os.system("xmodmap Xmodmap")
+# whether caps key down was generated last_time and a lock for the boolean
+caps_down_generated = False
+caps_down_generate_lock = threading.Lock()
 
-mod_release_lock = threading.Lock()
-pressed_keys = []
-
-# whether Level 5 Shift (Caps Lock) is pressed
-level5shift = False
-
-def reactivate_mod():
-    os.popen("xdotool keydown --delay 0 ISO_Level3_Shift")
+caps_up_generated = False
+caps_up_generate_lock = threading.Lock()
 
 
-def clear_mod():
-    os.popen("xdotool keyup --delay 0 ISO_Level3_Shift")
+def main():
+    time.sleep(5)
+
+    os.chdir(os.path.dirname(__file__))
+    os.system("xmodmap Xmodmap")
+
+    hook_manager = pyxhook.HookManager()
+    hook_manager.KeyDown = handle_key_event
+    hook_manager.KeyUp = handle_key_event
+    hook_manager.HookKeyboard()
+    hook_manager.start()
+
+    s = socket.socket()
+    s.bind(("localhost", 24679))
+    s.listen(1)
+
+    while True:
+        try:
+            s.accept()
+            os.system("xmodmap Xmodmap")
+        except KeyboardInterrupt:
+            break
+
+    hook_manager.cancel()
 
 
-def keyPress(key):
-    global mod_release_lock
-    mod_release_lock.acquire()
-    clear_mod()
-    os.popen("xdotool key --delay 0 " + key)
-    reactivate_mod()
-    mod_release_lock.release()
-    pass
+def reactivate_modifier():
+    global caps_down_generated, caps_down_generate_lock
+    with caps_down_generate_lock:
+        caps_down_generated = True
+        os.system("xdotool keydown --delay 0 ISO_Level3_Shift")
 
 
-def generate_key_event(key, eventType):
-    if eventType == "key down":
-        if level5shift:
-            if not key in pressed_keys: pressed_keys.append(key)
-            keyPress(key)
-            for i in range(100):
-                time.sleep(0.004)
-                if not key in pressed_keys:
-                    return
-            while key in pressed_keys:
-                keyPress(key)
-                time.sleep(0.017)
-    else:
-        while key in pressed_keys:
-            pressed_keys.remove(key)
+def clear_modifier():
+    global caps_up_generated, caps_up_generate_lock
+    with caps_up_generate_lock:
+        caps_up_generated = True
+        os.system("xdotool keyup --delay 0 ISO_Level3_Shift")
+
+
+def generate_key_event(key, event):
+    event = event.replace(" ", "")  # key down -> keydown
+    global modifier_lock
+    modifier_lock.acquire()
+    if modifier:
+        if event == "keydown":
+            clear_modifier()
+        os.system("xdotool %s --delay 0 %s" % (event, key))
+        if event == "keyup":
+            reactivate_modifier()
+    modifier_lock.release()
 
 
 def handle_key_event(event):
-    global mod_release_lock
-    global level5shift
+    global modifier, modifier_lock
+    global caps_up_generated, caps_down_generated, caps_down_generate_lock, caps_up_generate_lock
 
-    # the key to be pressed as replacement for this keyboard event
+    # the key to be pressed as replacement for the event's key
     replacement_key = None
 
-    if event.ScanCode == 66:  # caps lock key code
-        # level5shift key
+    if event.ScanCode == 66:  # caps key
         if event.MessageName == "key down":
-            level5shift = True
+            with caps_down_generate_lock:
+                generated = caps_down_generated
+                caps_down_generated = False
+            if not generated:
+                with modifier_lock:
+                    modifier = True
         elif event.MessageName == "key up":
-            if mod_release_lock.acquire(False):
-                level5shift = False
-                os.system("xdotool keyup ISO_Level3_Shift")
-                mod_release_lock.release()
+            with caps_up_generate_lock:
+                generated = caps_up_generated
+                caps_up_generated = False
+            if not generated:
+                with modifier_lock:
+                    os.system("xdotool keyup ISO_Level3_Shift")
+                    modifier = False
     elif event.ScanCode == 31:  # i key
         replacement_key = "Up"
     elif event.ScanCode == 44:  # j key
@@ -89,22 +115,4 @@ def handle_key_event(event):
         threading.Thread(None, lambda: generate_key_event(replacement_key, event.MessageName)).start()
 
 
-hookman = pyxhook.HookManager()
-hookman.KeyDown = handle_key_event
-hookman.KeyUp = handle_key_event
-hookman.HookKeyboard()
-hookman.start()
-
-s = socket.socket()
-s.bind(("localhost", 24679))
-s.listen(1)
-
-while True:
-    try:
-        s.accept()
-        os.system("xmodmap Xmodmap")
-        print "test"
-    except KeyboardInterrupt:
-        break
-
-hookman.cancel()
+main()
