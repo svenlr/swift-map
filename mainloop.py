@@ -8,7 +8,7 @@ import socket
 
 time.sleep(5)
 
-os.path.join(os.path.dirname(__file__), '..')
+os.chdir(os.path.dirname(__file__))
 os.system("xmodmap Xmodmap")
 
 mod_release_lock = threading.Lock()
