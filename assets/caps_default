@@ -1,4 +1,0 @@
-key <CAPS> {
-    type= "ONE_LEVEL",
-    symbols[Group1]= [ Overlay1_Enable ]
-};
