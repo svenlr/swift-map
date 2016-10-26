@@ -10,21 +10,6 @@ import sys
 from options import read_file
 
 
-class KeyMapping:
-    def __init__(self, mapping_data, original_key):
-        self.code = mapping_data["code"]
-        self.modifiers = mapping_data["modifiers"]
-        self.original_key = original_key
-        self.mapped_key = mapping_data["key"]
-
-
-def get_xkb_code(keymap_data, key_code):
-    key_codes = re.search(r"xkb_keycodes *\".*\" *\{[^}]*\}", keymap_data).group(0)
-    key_code_search = re.search(r"<.{2,6}> *= *" + str(key_code) + r" *;", key_codes).group(0)
-    xkb_code = key_code_search.split("=")[0].strip(' ')[1:-1]
-    return xkb_code
-
-
 def load_keymap(filename):
     os.system("xkbcomp -xkb $DISPLAY " + filename)
     return read_file(filename)
@@ -48,6 +33,17 @@ def get_key_definition(keymap_data, xkb_code):
     return re.search(r"key <" + xkb_code + r"> \{[^}]*\};", keymap_data).group(0)
 
 
+def get_xkb_code(keymap_data, key_code):
+    key_codes = re.search(r"xkb_keycodes *\".*\" *\{[^}]*\}", keymap_data).group(0)
+    key_code_search = re.search(r"<.{2,6}> *= *" + str(key_code) + r" *;", key_codes).group(0)
+    xkb_code = key_code_search.split("=")[0].strip(' ')[1:-1]
+    return xkb_code
+
+
+def get_xkb_symbols_section(keymap_data):
+    return re.search(r"xkb_symbols *\".*\" *\{([^{]+(name|key)[^{]+\{[^}]+\};)*", keymap_data).group(0)
+
+
 def add_overlay_key(keymap_data, xkb_code, overlay_xkb_code):
     old_key_def = new_key_def = get_key_definition(keymap_data, xkb_code)
     new_key_def = new_key_def.replace("}", ",\n    overlay1 = <" + overlay_xkb_code + "> \n}")
@@ -55,21 +51,12 @@ def add_overlay_key(keymap_data, xkb_code, overlay_xkb_code):
     return keymap_data
 
 
-def get_xkb_symbols_section(keymap_data):
-    return re.search(r"xkb_symbols *\".*\" *\{([^{]+(name|key)[^{]+\{[^}]+\};)*", keymap_data).group(0)
-
-
 def update_keymap():
-    keymap = {}
     keymap_data = load_keymap("keymap")
 
     # set up modifier keys
     cur_caps = get_key_definition(keymap_data, "CAPS")
     keymap_data = keymap_data.replace(cur_caps, read_file("assets/caps_default"))
-    # cur_mode_switch = get_key_definition(keymap_data, "MDSW")
-    # cur_mod_map = re.search(r"modifier_map .{3,8} \{[^}]*<MDSW>[^}]*\};", keymap_data).group(0)
-    # keymap_data = keymap_data.replace(cur_mode_switch, read_file("assets/mdsw_default"))
-    # keymap_data = keymap_data.replace(cur_mod_map, "modifier_map Mod3 { <MDSW> };\n modifier_map Mod3 { <CAPS> };")
 
     config = json.loads(read_file("config.json"))
     mapping_data = config["mapping"]
@@ -112,7 +99,7 @@ def update_keymap():
 
     apply_keymap("keymap", keymap_data)
 
-    return keymap
+    return keymap_data
 
 
 def main():
@@ -120,16 +107,16 @@ def main():
         time.sleep(5)
 
     os.chdir(os.path.dirname(__file__))
-    update_keymap()
+    keymap_data = update_keymap()
 
     s = socket.socket()
     s.bind(("localhost", 24679))
     s.listen(1)
 
-    while False:
+    while True:
         try:
             s.accept()
-            os.system("xmodmap Xmodmap")
+            apply_keymap("keymap", keymap_data)
         except KeyboardInterrupt:
             break
 
