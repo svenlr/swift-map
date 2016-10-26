@@ -4,6 +4,8 @@ import os
 import re
 import socket
 import json
+import time
+import sys
 
 from options import read_file
 
@@ -114,8 +116,8 @@ def update_keymap():
 
 
 def main():
-    # if "nosleep" not in sys.argv:
-    #    time.sleep(5)
+    if "nosleep" not in sys.argv:
+        time.sleep(5)
 
     os.chdir(os.path.dirname(__file__))
     update_keymap()
@@ -130,33 +132,6 @@ def main():
             os.system("xmodmap Xmodmap")
         except KeyboardInterrupt:
             break
-
-
-def update_symbol_list(keymap_data, xkb_code, key):
-    old_key_def = new_key_def = get_key_definition(keymap_data, xkb_code)
-    symbol_list_search = re.search(r"(?<=symbols).*\[(( ){0,30}.{0,20}( ){0,20},?){0,8}\]", new_key_def).group(0)
-    group, old_symbol_list = symbol_list_search.split("=")
-    group = group.strip(' ')[1:-1]
-    group = group[0].lower() + group[1:]
-    old_symbol_list = old_symbol_list.replace("[", "").replace("]", "").strip(' ')
-    symbol_list = old_symbol_list
-    entries = symbol_list.split(',')
-    symbol_list = entries[0]
-    for i in range(1, 8):
-        if i == 4 or i == 5:
-            symbol_list += ", " + str(key)
-        elif i < len(entries):
-            symbol_list += ", " + str(entries[i])
-        else:
-            symbol_list += ", NoSymbol"
-    type_search = re.search(r"type(\[" + group + r"\])( )*=( )*\"(_|[A-Z]{0,20}){0,10}\"", new_key_def)
-    if not type_search:
-        type_search = re.search(r"type( )*=( )*\"(_|[A-Z]{0,20}){0,10}\"", new_key_def)
-    type_key = type_search.group(0).split("=")[0]
-    new_key_def = new_key_def.replace(old_symbol_list, symbol_list)
-    new_key_def = new_key_def.replace(type_search.group(0), type_key + "=\"EIGHT_LEVEL_SEMIALPHABETIC\"")
-    keymap_data = keymap_data.replace(old_key_def, new_key_def)
-    return keymap_data
 
 
 main()
