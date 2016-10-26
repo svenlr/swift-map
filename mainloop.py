@@ -2,33 +2,97 @@
 
 import time
 import os
-import threading
-import pyxhook
+import sys
+import re
 import socket
+import json
 
-# whether (Caps Lock) is pressed
-modifier = False
-modifier_lock = threading.Lock()
+from options import get_option, read_file
 
-# whether caps key down was generated last_time and a lock for the boolean
-caps_down_generated = False
-caps_down_generate_lock = threading.Lock()
 
-caps_up_generated = False
-caps_up_generate_lock = threading.Lock()
+class KeyMapping:
+    def __init__(self, mapping_data, original_key):
+        self.code = mapping_data["code"]
+        self.modifiers = mapping_data["modifiers"]
+        self.original_key = original_key
+        self.mapped_key = mapping_data["key"]
+
+
+def get_key_definition(map_file, key):
+    key = key.upper()
+    return re.search(r"key <" + key + r"> \{[^}]*\};", map_file).group(0)
+
+
+def update_key_definition(map_file, key, value):
+    cur_def = get_key_definition(map_file, key)
+    symbol_list_search = re.search(r"(?<=symbols).*\[(( ){0,30}.{0,20}( ){0,20},?){0,8}(?=\])", cur_def).group(0)
+    group, symbol_list_search = symbol_list_search.split("=")
+    group = group.replace("[", "").replace("]", "")
+    group = group[0].lower() + group[1:]
+    symbol_list = symbol_list_search.strip(' ')
+    num_entries = symbol_list.count(",") + 1
+    for i in range(num_entries, 8):
+        if i == 4 or i == 5:
+            symbol_list += ", " + str(value)
+        else:
+            symbol_list += ", NoSymbol"
+    symbol_list += "]"
+    print symbol_list
+    type_search = re.search(r"type(\[" + group + r"\])( )*=( )*\"(_|[A-Z]{0,20}){0,10}\"", cur_def)
+    if not type_search:
+        type_search = re.search(r"type( )*=( )*\"(_|[A-Z]{0,20}){0,10}\"", cur_def)
+    type_key = type_search.group(0).split("=")[0]
+    cur_def = cur_def.replace(symbol_list_search, symbol_list)
+    cur_def = cur_def.replace(type_search.group(0), type_key + "=\"EIGHT_LEVEL_SEMIALPHABETIC\"")
+    print cur_def
+
+
+def update_keymap():
+    keymap = {}
+    os.system("xkbcomp -xkb $DISPLAY keymap")
+    with open("test") as f:
+        keymap_file = f.read()
+    with open("config.json") as f:
+        config = json.loads(f.read())
+    keymap_data = config["keymap"]
+    modifiers = []
+    cur_caps = get_key_definition(keymap_file, "CAPS")
+    cur_mode_switch = get_key_definition(keymap_file, "MDSW")
+    cur_mod_map = re.search(r"modifier_map .{3,8} \{.*\n?.*<MDSW>.*\n?.*\}", keymap_file).group(0)
+    keymap_file = keymap_file.replace(cur_caps, read_file("assets/caps_default"))
+    keymap_file = keymap_file.replace(cur_mode_switch, read_file("assets/mdsw_default"))
+    keymap_file = keymap_file.replace(cur_mod_map, "modifier_map Mod3 { <MDSW> }")
+    update_key_definition(keymap_file, "AC02", "Up")
+    for mapping in keymap_data:
+        try:
+            for mod in mapping["modifiers"]:
+                if mod not in modifiers:
+                    modifiers.append(mod)
+            code = mapping["code"]
+            original_key = get_option("Xmodmap_tmp", "keycode " + str(code)).split(" ")[0]
+            if code not in keymap:
+                keymap[code] = []
+            keymap[code].append(KeyMapping(mapping, original_key))
+            os.system("xmodmap \"keycode %s = %s %s %s %s\"" % (str(code), original_key, original_key.upper(),
+                                                                original_key, original_key.upper()))
+        except Exception as e:
+            print e
+    for mod in modifiers:
+        os.system("xmodmap \"keycode %s = NoSymbol\"" % (str(mod)))
+
+
+    with open("keymap", "w") as f:
+        f.write(keymap_file)
+
+    return keymap
 
 
 def main():
-    time.sleep(5)
+    # if "nosleep" not in sys.argv:
+    #    time.sleep(5)
 
     os.chdir(os.path.dirname(__file__))
-    os.system("xmodmap Xmodmap")
-
-    hook_manager = pyxhook.HookManager()
-    hook_manager.KeyDown = handle_key_event
-    hook_manager.KeyUp = handle_key_event
-    hook_manager.HookKeyboard()
-    hook_manager.start()
+    keymap = update_keymap()
 
     s = socket.socket()
     s.bind(("localhost", 24679))
@@ -40,79 +104,6 @@ def main():
             os.system("xmodmap Xmodmap")
         except KeyboardInterrupt:
             break
-
-    hook_manager.cancel()
-
-
-def reactivate_modifier():
-    global caps_down_generated, caps_down_generate_lock
-    with caps_down_generate_lock:
-        caps_down_generated = True
-        os.system("xdotool keydown --delay 0 ISO_Level3_Shift")
-
-
-def clear_modifier():
-    global caps_up_generated, caps_up_generate_lock
-    with caps_up_generate_lock:
-        caps_up_generated = True
-        os.system("xdotool keyup --delay 0 ISO_Level3_Shift")
-
-
-def generate_key_event(key, event):
-    event = event.replace(" ", "")  # key down -> keydown
-    global modifier_lock
-    modifier_lock.acquire()
-    if modifier:
-        if event == "keydown":
-            clear_modifier()
-        os.system("xdotool %s --delay 0 %s" % (event, key))
-        if event == "keyup":
-            reactivate_modifier()
-    modifier_lock.release()
-
-
-def handle_key_event(event):
-    global modifier, modifier_lock
-    global caps_up_generated, caps_down_generated, caps_down_generate_lock, caps_up_generate_lock
-
-    # the key to be pressed as replacement for the event's key
-    replacement_key = None
-
-    if event.ScanCode == 66:  # caps key
-        if event.MessageName == "key down":
-            with caps_down_generate_lock:
-                generated = caps_down_generated
-                caps_down_generated = False
-            if not generated:
-                with modifier_lock:
-                    modifier = True
-        elif event.MessageName == "key up":
-            with caps_up_generate_lock:
-                generated = caps_up_generated
-                caps_up_generated = False
-            if not generated:
-                with modifier_lock:
-                    os.system("xdotool keyup ISO_Level3_Shift")
-                    modifier = False
-    elif event.ScanCode == 31:  # i key
-        replacement_key = "Up"
-    elif event.ScanCode == 44:  # j key
-        replacement_key = "Left"
-    elif event.ScanCode == 45:  # k key
-        replacement_key = "Down"
-    elif event.ScanCode == 46:  # l key
-        replacement_key = "Right"
-    elif event.ScanCode == 47:  # oe
-        replacement_key = "End"
-    elif event.ScanCode == 43:  # h
-        replacement_key = "Home"
-    elif event.ScanCode == 30:  # u
-        replacement_key = "Page_Up"
-    elif event.ScanCode == 32:  # o
-        replacement_key = "Page_Down"
-
-    if replacement_key is not None:
-        threading.Thread(None, lambda: generate_key_event(replacement_key, event.MessageName)).start()
 
 
 main()

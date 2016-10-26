@@ -1,0 +1,36 @@
+{
+  "keymap": [
+    {
+      "code": 30,
+      "key": "Page_Up"
+    },
+    {
+      "code": 31,
+      "key": "Up"
+    },
+    {
+      "code": 32,
+      "key": "Page_Down"
+    },
+    {
+      "code": 43,
+      "key": "Home"
+    },
+    {
+      "code": 44,
+      "key": "Left"
+    },
+    {
+      "code": 45,
+      "key": "Down"
+    },
+    {
+      "code": 46,
+      "key": "Right"
+    },
+    {
+      "code": 47,
+      "key": "End"
+    }
+  ]
+}
