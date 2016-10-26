@@ -1,5 +1,25 @@
 {
-  "keymap": [
+  "mapping": [
+    {
+      "code": 16,
+      "key": "braceleft"
+    },
+    {
+      "code": 17,
+      "key": "bracketleft"
+    },
+    {
+      "code": 18,
+      "key": "bracketright"
+    },
+    {
+      "code": 19,
+      "key": "braceright"
+    },
+    {
+      "code": 20,
+      "key": "backslash"
+    },
     {
       "code": 30,
       "key": "Page_Up"
