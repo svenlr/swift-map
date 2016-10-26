@@ -1,4 +1,0 @@
-key <MDSW> {
-    type= "ONE_LEVEL",
-    symbols[Group1]= [ ISO_Level5_Shift ]
-};

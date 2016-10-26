@@ -1,4 +1,4 @@
 key <CAPS> {
     type= "ONE_LEVEL",
-    symbols[Group1]= [ ISO_Level5_Shift ]
+    symbols[Group1]= [ Overlay1_Enable ]
 };

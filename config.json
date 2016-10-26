@@ -22,35 +22,35 @@
     },
     {
       "code": 30,
-      "key": "Page_Up"
+      "mapped_xkb_code": "PGUP"
     },
     {
       "code": 31,
-      "key": "Up"
+      "mapped_xkb_code": "UP"
     },
     {
       "code": 32,
-      "key": "Page_Down"
+      "mapped_xkb_code": "PGDN"
     },
     {
       "code": 43,
-      "key": "Home"
+      "mapped_xkb_code": "HOME"
     },
     {
       "code": 44,
-      "key": "Left"
+      "mapped_xkb_code": "LEFT"
     },
     {
       "code": 45,
-      "key": "Down"
+      "mapped_xkb_code": "DOWN"
     },
     {
       "code": 46,
-      "key": "Right"
+      "mapped_xkb_code": "RGHT"
     },
     {
       "code": 47,
-      "key": "End"
+      "mapped_xkb_code": "END"
     }
   ]
 }
