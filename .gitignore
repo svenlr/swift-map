@@ -3,4 +3,4 @@
 *.iml
 *.pyc
 
-Xmodmap_tmp
+assets/generated_xkb_codes
