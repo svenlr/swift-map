@@ -1,4 +1,4 @@
-# Coding without jumping around on the keyboard and twisting your fingers? Yes.
+# System wide custom xkb keyboard overlays
 This little program allows you to easily set up overlays for your xkb keyboard.<br>
 Specify a key (by default Caps Lock), disable its normal behaviour and use it as an activator for
 another key layer on your keyboard.<br>
