@@ -1,4 +1,4 @@
-# Coding without jumping around on the keyboard and twisting your fingers? Yes.
+# System wide custom xkb keyboard overlays
 This little program allows you to easily set up overlays for your xkb keyboard.<br>
 Specify a key (by default Caps Lock), disable its normal behaviour and use it as an activator for
 another key layer on your keyboard.<br>
@@ -31,10 +31,5 @@ now open an editor and try pressing some keys with and without caps held down.
 - add it to start up (tested on Ubuntu based systems)<br>
 Go to the launcher and open the program 'Startup Applications'.<br>Click on 'Add'.<br>Enter some name.<br>Click on 'Browse'.<br>Navigate to 'mainloop.py'.
 
-<<<<<<< HEAD
-- add it to after resume execution
-<pre>sudo cp resume.py /etc/pm/sleep.d/</pre>
-=======
 - add it to resume directory so the overlays still work after resume
 <pre>sudo cp resume.py /etc/pm/sleep.d/</pre>
->>>>>>> xkbcomp
