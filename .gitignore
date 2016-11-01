@@ -3,4 +3,5 @@
 *.iml
 *.pyc
 
-assets/generated_xkb_codes
+assets/generated_key_labels
+xtest.py

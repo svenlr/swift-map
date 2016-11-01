@@ -1,4 +1,4 @@
 key <####> {
-    type= "ONE_LEVEL",
-    symbols[Group1]= [ Overlay$$$$_Enable ]
+    type= "THREE_LEVEL",
+    symbols[Group1]= [ Overlay$$$$_Enable, Overlay$$$$_Enable, Caps_Lock ]
 };

@@ -1,70 +1,79 @@
 {
   "usage0": "[overlays] overlay# > xkb_code: the key to activate the overlay. 'disabled' to disable the overlay",
-  "usage1": "[mapping] mapping works as follows: when 'key_code' is pressed, 'overlay_key' is generated",
-  "usage2": "[mapped] you may also define a 'mapped_xkb_code' directly, which will be pressed instead of 'key_code'",
+  "usage1": "[mapping] mapping works as follows: when 'key_code' is pressed, 'mapped_keysym' is generated",
+  "usage2": "[mapped] you may also define a 'mapped_key_label' directly, which will be pressed instead of 'key_code'",
   "usage3": "[xkb_code] a list of xkb_codes and their current mappings will be available after first execution",
   "usage4": "[mode] if the overlay activation key should act in 'toggle' or 'hold' mode (RE-LOGIN required)",
   "overlay1": {
-    "xkb_code": "CAPS",
+    "key": "CAPS",
     "mode": "hold",
     "mapping": [
       {
         "key_code": 16,
-        "overlay_key": "braceleft"
+        "mapped_keysym": "braceleft"
       },
       {
         "key_code": 17,
-        "overlay_key": "bracketleft"
+        "mapped_keysym": "bracketleft"
       },
       {
         "key_code": 18,
-        "overlay_key": "bracketright"
+        "mapped_keysym": "bracketright"
       },
       {
         "key_code": 19,
-        "overlay_key": "braceright"
+        "mapped_keysym": "braceright"
       },
       {
         "key_code": 20,
-        "overlay_key": "backslash"
+        "mapped_keysym": "backslash"
       },
       {
         "key_code": 30,
-        "mapped_xkb_code": "PGUP"
+        "mapped_key_label": "PGUP"
       },
       {
         "key_code": 31,
-        "mapped_xkb_code": "UP"
+        "mapped_key_label": "UP"
       },
       {
         "key_code": 32,
-        "mapped_xkb_code": "PGDN"
+        "mapped_key_label": "PGDN"
       },
       {
         "key_code": 43,
-        "mapped_xkb_code": "HOME"
+        "mapped_key_label": "HOME"
       },
       {
         "key_code": 44,
-        "mapped_xkb_code": "LEFT"
+        "mapped_key_label": "LEFT"
       },
       {
         "key_code": 45,
-        "mapped_xkb_code": "DOWN"
+        "mapped_key_label": "DOWN"
       },
       {
         "key_code": 46,
-        "mapped_xkb_code": "RGHT"
+        "mapped_key_label": "RGHT"
       },
       {
         "key_code": 47,
-        "mapped_xkb_code": "END"
+        "mapped_key_label": "END"
+      },
+      {
+        "key_code": 41,
+        "mapped_sequences": {
+          "down": [
+            {"text": "fuck"},
+            {"key": "Return"}
+          ]
+        }
       }
     ]
   },
   "overlay2": {
     "mode": "hold",
-    "xkb_code": "disabled",
+    "key": "disabled",
     "mapping": [
 
     ]

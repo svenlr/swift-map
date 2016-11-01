@@ -1,39 +1,89 @@
 #!/usr/bin/env python2.7
 
+import json
 import os
 import re
 import socket
-import json
-import time
 import sys
+import time
 
 from options import read_file
 
+try:
+    import pyxhook
+    import Xlib, Xlib.protocol, Xlib.display, Xlib.X
+    xlib_support = True
+except Exception as e:
+    pyxhook = Xlib = None
+    xlib_support = False
+    print "Warning:"
+    print e
+    print "No X library support. Command as well as string overlays will not be possible."
+    print "You may want to install python-xlib."
+    time.sleep(1)
 
-class KeyMapper:
+default_path = os.path.dirname(__file__)
+os.chdir(default_path)
+
+
+class Mapper:
     def __init__(self):
         self.keymap_data = ""
         self.keymap_file = "keymap"
-        self.generated_xkb_codes_file = "assets/generated_xkb_codes"
-        self.used_xkb_codes = self.get_generated_xkb_codes()
-        self.main()
 
-    def store_used_xkb_codes(self):
+        self.generated_key_labels_file = "assets/generated_key_labels"
+        self.used_key_labels = self.restore_used_key_labels()
+
+        self.config = json.loads(read_file("config.json"))
+
+        self.overlays = []
+
+    def main(self):
+        if "nosleep" not in sys.argv:
+            time.sleep(5)
+
+        self.configure_keymap()
+
+        try:
+            s = socket.socket()
+            s.bind(("localhost", 24679))
+            s.listen(1)
+
+            for overlay in self.overlays:
+                overlay.start_hooking_keyboard()
+
+            while True:
+                try:
+                    s.accept()
+                    time.sleep(5)
+                    self.load_keymap_file(self.keymap_file)
+                except KeyboardInterrupt:
+                    for overlay in self.overlays:
+                        overlay.stop_hooking_keyboard()
+                    break
+        except Exception as e:
+            print e, ". Another instance of this program is already running. Kill it using 'pkill python2.7' and " \
+                     "restart the program if you want suspend/resume and command overlays to work correctly."
+
+    def xdotool(self, args):
+        os.system("lib/xdotool/xdotool " + args)
+
+    def store_used_key_labels(self):
         file_data = ""
-        xkb_codes = []
+        key_labels = []
         # remove double elements
-        for xkb_code in self.used_xkb_codes:
-            if xkb_code not in xkb_codes:
-                xkb_codes.append(xkb_code)
-        self.used_xkb_codes = xkb_codes
-        for xkb_code in self.used_xkb_codes:
-            file_data += "\n" + xkb_code
-        with open(self.generated_xkb_codes_file, "w") as f:
+        for key_label in self.used_key_labels:
+            if key_label not in key_labels:
+                key_labels.append(key_label)
+        self.used_key_labels = key_labels
+        for key_label in self.used_key_labels:
+            file_data += "\n" + key_label
+        with open(self.generated_key_labels_file, "w") as f:
             f.write(file_data)
 
-    def get_generated_xkb_codes(self):
-        if os.path.isfile(self.generated_xkb_codes_file):
-            codes = read_file(self.generated_xkb_codes_file).split("\n")
+    def restore_used_key_labels(self):
+        if os.path.isfile(self.generated_key_labels_file):
+            codes = read_file(self.generated_key_labels_file).split("\n")
             while '' in codes:
                 codes.remove('')
             return codes
@@ -45,11 +95,17 @@ class KeyMapper:
         interpret_section = re.search(r"interpret *" + re_stroke + r" *\{[^}]*\}( |\n)*;", self.keymap_data).group(0)
         return interpret_section
 
-    def get_xkb_code(self, key_code):
+    def get_key_label(self, key_code):
         key_codes = self.get_xkb_keycodes_section()
         key_code_search = re.search(r"<.{2,6}> *= *" + str(key_code) + r" *;", key_codes).group(0)
-        xkb_code = key_code_search.split("=")[0].strip(' ')[1:-1]
-        return xkb_code
+        key_label = key_code_search.split("=")[0].strip(' ')[1:-1]
+        return key_label
+
+    def get_key_code(self, key_label):
+        key_codes = self.get_xkb_keycodes_section()
+        key_label_search = re.search(r"<" + str(key_label) + "> *= *[0-9]{1,10};", key_codes).group(0)
+        key_code = key_label_search.split("=")[1].strip(' ')[:-1]  # cut ';'
+        return key_code
 
     def get_xkb_keycodes_section(self):
         return re.search(r"xkb_keycodes *\".*\" *\{[^}]*\}", self.keymap_data).group(0)
@@ -57,46 +113,50 @@ class KeyMapper:
     def get_xkb_symbols_section(self):
         return re.search(r"xkb_symbols *\".*\" *\{([^{]+(name|key)[^{]+\{[^}]+\};)*", self.keymap_data).group(0)
 
-    def get_keysym_section(self, xkb_code):
-        xkb_code = xkb_code.upper()
-        return re.search(r"key <" + xkb_code + r"> \{[^}]*\};", self.keymap_data).group(0)
+    def get_keysym_section(self, key_label):
+        key_label = key_label.upper()
+        return re.search(r"key <" + key_label + r"> \{[^}]*\};", self.keymap_data).group(0)
 
-    def get_unused_xkb_codes(self):
-        all_codes = self.get_xkb_codes()
+    def get_unused_key_labels(self):
+        all_codes = self.get_key_labels()
         codes = []
         xkb_symbols_section = self.get_xkb_symbols_section()
-        for xkb_code in all_codes:
-            if xkb_code not in xkb_symbols_section:
-                codes.append(xkb_code)
+        for key_label in all_codes:
+            if key_label not in xkb_symbols_section:
+                codes.append(key_label)
         return codes
 
-    def get_xkb_codes(self):
+    def get_key_labels(self):
         codes = []
         for i in range(9, 255):
             try:
-                xkb_code = self.get_xkb_code(i)
-                codes.append(xkb_code)
+                key_label = self.get_key_label(i)
+                codes.append(key_label)
             except AttributeError as e:
-                print "Key code #" + str(i) + " has no xkb_code defined in xkb_keymap."
+                print "Key code #" + str(i) + " has no key_label defined in xkb_keymap."
         return codes
 
-    def add_overlay_key(self, xkb_code, overlay_xkb_code, num_overlay):
-        old_key_def = new_key_def = self.get_keysym_section(xkb_code)
+    def has_overlay(self, key_label):
+        old_key_def = new_key_def = self.get_keysym_section(key_label)
         if "overlay" in old_key_def:
-            old_overlay = re.search(r",\n *overlay[0-9] *= *<.{2,6}>", old_key_def).group(0)
-            new_key_def = new_key_def.replace(old_overlay, "")
-            print xkb_code + " CAN NOT HAVE ANOTHER OVERLAY. DELETING PREVIOUS OVERLAY!"
-        new_key_def = new_key_def.replace("}", ",\n overlay" + str(num_overlay) + " = <" + overlay_xkb_code + "> \n}")
-        self.keymap_data = self.keymap_data.replace(old_key_def, new_key_def)
+            return True
+        else:
+            return False
 
-    def map_overlay_keys(self, mapping_data, num_overlay):
-        # add overlays to keys
-        for mapping in mapping_data:
-            if "mapped_xkb_code" in mapping:
-                code = mapping["key_code"]
-                overlay_xkb_code = mapping["mapped_xkb_code"]
-                xkb_code = self.get_xkb_code(code)
-                self.add_overlay_key(xkb_code, overlay_xkb_code, num_overlay)
+    def add_overlay_key(self, key_label, overlay_key_label, num_overlay):
+        try:
+            old_key_def = new_key_def = self.get_keysym_section(key_label)
+            if self.has_overlay(key_label):
+                old_overlay = re.search(r",\n *overlay[0-9] *= *<.{2,6}>", old_key_def).group(0)
+                new_key_def = new_key_def.replace(old_overlay, "")
+                print key_label + " CAN NOT HAVE ANOTHER OVERLAY. DELETING PREVIOUS OVERLAY!"
+            new_key_def = new_key_def.replace("}",
+                                              ",\n overlay" + str(num_overlay) + " = <" + overlay_key_label + "> \n}")
+            self.keymap_data = self.keymap_data.replace(old_key_def, new_key_def)
+            return True
+        except Exception as e:
+            print e
+            return False
 
     def disable_overlay_key_toggling(self, num_overlay):
         num_overlay = str(num_overlay)
@@ -104,58 +164,114 @@ class KeyMapper:
             self.get_interpret_section("Overlay%s_Enable+AnyOfOrNone(all)" % num_overlay),
             read_file("assets/interpret_overlay" + num_overlay))
 
-    def set_overlay_enable_key(self, xkb_code, num_overlay):
+    def set_overlay_enable_key(self, key_label, num_overlay):
         # set up modifier key
-        old_keysym_section = self.get_keysym_section(xkb_code)
-        keysym = read_file("assets/overlay_enable_keysym").replace("####", xkb_code).replace("$$$$", str(num_overlay))
+        old_keysym_section = self.get_keysym_section(key_label)
+        keysym = read_file("assets/overlay_enable_keysym").replace("####", key_label).replace("$$$$", str(num_overlay))
         self.keymap_data = self.keymap_data.replace(old_keysym_section, keysym)
 
+    def create_keysym_section(self, key_label, keys_string):
+        try:
+            new_key_data = "\n key <" + key_label + "> {[" + keys_string + "]};"
+            xkb_symbols_section = old_xkb_symbols_section = self.get_xkb_symbols_section()
+            xkb_symbols_section += new_key_data
+            self.keymap_data = self.keymap_data.replace(old_xkb_symbols_section, xkb_symbols_section)
+            self.used_key_labels.append(key_label)
+            return True
+        except AttributeError as e:
+            print e
+            return False
+
     def create_keysym_sections(self, mapping_data):
-        available_key_codes = self.get_unused_xkb_codes()
-        # Use available xkb_codes to map user defined key strokes
+        available_key_codes = self.get_unused_key_labels()
+        # Use available key_labels to map user defined key strokes
         for mapping in mapping_data:
-            if "mapped_xkb_code" not in mapping:
-                overlay_key = mapping["overlay_key"]
+            if "mapped_keysym" in mapping:
                 if len(available_key_codes) == 0:
                     print "============================================================"
-                    print "NO FREE KEY CODES AVAILABLE FOR MAPPING!!! "
+                    print "NO FREE KEY CODES AVAILABLE FOR CHARACTER MAPPING!!! "
                     print "please log back in again"
                     print "if this problem persists, you may also have exceeded the number of available key codes"
                     print "============================================================"
-                    break
+                    return False
                 else:
-                    xkb_code = available_key_codes.pop()
-                    print "Found free (unused) xkb_code and mapping it now: " + xkb_code
-                    mapping["mapped_xkb_code"] = xkb_code
-                    new_key_data = "\n key <" + xkb_code + "> {[" + overlay_key + "]};"
-                    xkb_symbols_section = old_xkb_symbols_section = self.get_xkb_symbols_section()
-                    xkb_symbols_section += new_key_data
-                    self.keymap_data = self.keymap_data.replace(old_xkb_symbols_section, xkb_symbols_section)
-                    self.used_xkb_codes.append(xkb_code)
+                    key_label = available_key_codes.pop()
+                    if self.create_keysym_section(key_label, mapping["mapped_keysym"]):
+                        print "Found free (unused) key_label and mapped it now: " + key_label
+                        mapping["mapped_key_label"] = key_label
+                    else:
+                        available_key_codes.append(key_label)
+        return True
 
-    def update_keymap(self):
+    def map_overlay_keys(self, mapping_data, num_overlay):
+        # add overlays to keys
+        for mapping in mapping_data:
+            if "mapped_key_label" in mapping:
+                code = mapping["key_code"]
+                overlay_key_label = mapping["mapped_key_label"]
+                key_label = self.get_key_label(code)
+                self.add_overlay_key(key_label, overlay_key_label, num_overlay)
+
+    def map_commands(self, mapping_data, overlay):
+        for mapping in mapping_data:
+            if "mapped_sequences" in mapping:
+                sequences = mapping["mapped_sequences"]
+                if "down" in sequences:
+                    down_sequence = sequences["down"]
+                else:
+                    down_sequence = []
+                if "up" in sequences:
+                    up_sequence = sequences["up"]
+                else:
+                    up_sequence = []
+                commands = {
+                    "key down": down_sequence,
+                    "key up": up_sequence
+                }
+                key_label = self.get_key_label(mapping["key_code"])
+                new_key_label = self.get_unused_key_labels().pop()
+                if self.create_keysym_section(new_key_label, "NoSymbol"):
+                    if self.add_overlay_key(key_label, new_key_label, overlay.index):
+                        overlay.add_command_mapping(self.get_key_code(new_key_label), commands)
+                    else:
+                        print "Failed mapping commands to ", key_label
+                else:
+                    print "Failed creating new empty NoSymbol section for ", mapping
+
+    # def create_virtual_typing_map(self):
+
+
+    def configure_keymap(self):
         self.capture_keymap(self.keymap_file)
-        config = json.loads(read_file("config.json"))
 
-        # remove xkb_codes added during last execution
-        while len(self.used_xkb_codes) > 0:
-            previously_used_xkb_code = self.used_xkb_codes.pop()
+        # remove key_labels added during last execution
+        while len(self.used_key_labels) > 0:
+            previously_used_key_label = self.used_key_labels.pop()
             try:
-                self.keymap_data = self.keymap_data.replace(self.get_keysym_section(previously_used_xkb_code), "")
+                self.keymap_data = self.keymap_data.replace(self.get_keysym_section(previously_used_key_label), "")
             except AttributeError as e:
                 pass
 
-        def update_overlay(num_overlay):
-            overlay = "overlay" + str(num_overlay)
-            if config[overlay]["xkb_code"] != "disabled":
-                self.create_keysym_sections(config[overlay]["mapping"])
-                self.set_overlay_enable_key(config[overlay]["xkb_code"], num_overlay)
-                self.map_overlay_keys(config[overlay]["mapping"], num_overlay)
-                if config[overlay]["mode"] == "hold":
+        self.overlays = []
+        for num_overlay in [1, 2]:
+            overlay_id = "overlay" + str(num_overlay)
+            if self.config[overlay_id]["key"] != "disabled":
+                overlay_key_label = self.config[overlay_id]["key"]
+                overlay_key_code = self.get_key_code(overlay_key_label)
+                overlay_key_mode = self.config[overlay_id]["mode"]
+                mapping_data = self.config[overlay_id]["mapping"]
+                self.create_keysym_sections(mapping_data)
+                self.set_overlay_enable_key(overlay_key_label, num_overlay)
+                self.map_overlay_keys(mapping_data, num_overlay)
+
+                if overlay_key_mode == "hold":
                     self.disable_overlay_key_toggling(num_overlay)
 
-        update_overlay(1)
-        update_overlay(2)
+                global xlib_support
+                if xlib_support:
+                    overlay = CommandOverlay(num_overlay, overlay_key_code, overlay_key_mode)
+                    self.map_commands(mapping_data, overlay)
+                    self.overlays.append(overlay)
 
         with open(self.keymap_file, "w") as f:
             f.write(self.keymap_data)
@@ -166,7 +282,7 @@ class KeyMapper:
         self.keymap_data = read_file(filename)
 
     def load_keymap_file(self, filename):
-        self.store_used_xkb_codes()
+        self.store_used_key_labels()
         print "Applying keymap settings..."
         output = os.popen("xkbcomp -xkb %s $DISPLAY" % filename).read()
         if "rror" not in output:
@@ -174,30 +290,134 @@ class KeyMapper:
             os.remove(filename)
         else:
             print "Error while applying settings."
-        print "INFO: still " + str(len(self.get_unused_xkb_codes())) + " xkb_codes available for custom mappings."
-
-    def main(self):
-        if "nosleep" not in sys.argv:
-            time.sleep(5)
-
-        os.chdir(os.path.dirname(__file__))
-        self.update_keymap()
-
-        try:
-            s = socket.socket()
-            s.bind(("localhost", 24679))
-            s.listen(1)
-
-            while True:
-                try:
-                    s.accept()
-                    time.sleep(5)
-                    self.load_keymap_file(self.keymap_file)
-                except KeyboardInterrupt:
-                    break
-        except Exception as e:
-            print e, ". Another instance of this Software is already running. Kill it with " \
-                     "'pkill python2.7' if you want suspend/resume to work correctly."
+        print "INFO: still " + str(len(self.get_unused_key_labels())) + " key_labels available for custom mappings."
 
 
-KeyMapper()
+class CommandOverlay:
+    def __init__(self, index, overlay_enable_key_code, overlay_enable_mode):
+        self.command_mapping = {}
+        self.index = index
+
+        self.key_code = int(overlay_enable_key_code)
+        if overlay_enable_mode == "hold":
+            self.on_overlay_key = self.hold_overlay_key
+        elif overlay_enable_mode == "toggle":
+            self.on_overlay_key = self.toggle_overlay_key
+
+        self.key_faker = KeyFaker()
+
+        self.overlay_active = False
+
+        self.hookManager = pyxhook.HookManager()
+        self.hookManager.HookKeyboard()
+        self.hookManager.KeyDown = self.handle_key_event
+        self.hookManager.KeyUp = self.handle_key_event
+
+    def start_hooking_keyboard(self):
+        self.hookManager.start()
+
+    def stop_hooking_keyboard(self):
+        self.hookManager.cancel()
+
+    def add_command_mapping(self, key_code, commands):
+        key_code = int(key_code)
+        self.command_mapping[key_code] = commands
+
+    def handle_key_event(self, event):
+        if event.ScanCode == self.key_code:
+            self.on_overlay_key(event.MessageName)
+        else:
+            if self.overlay_active and event.ScanCode in self.command_mapping:
+                sequence = self.command_mapping[event.ScanCode][event.MessageName]
+                self.execute_command_sequence(sequence)
+
+    def execute_command_sequence(self, sequence):
+        for command in sequence:
+            try:
+                if isinstance(command, str):
+                    os.system(command)
+                elif isinstance(command, dict):
+                    if "text" in command:
+                        self.key_faker.type_text(command["text"])
+                    if "key" in command:
+                        self.key_faker.send_key(command["key"])
+            except Exception as e:
+                print "Error executing user defined command: ", e
+
+    def toggle_overlay_key(self, event_message):
+        if event_message == "key down":
+            self.overlay_active = not self.overlay_active
+
+    def hold_overlay_key(self, event_message):
+        if event_message == "key down":
+            self.overlay_active = True
+        else:
+            self.overlay_active = False
+
+
+class KeyFaker:
+    def __init__(self):
+        self.display = Xlib.display.Display()
+        self.root = self.display.screen().root
+
+    def get_current_window(self):
+        return self.display.get_input_focus()._data["focus"]
+
+    def get_key_code(self, key):
+        return self.display.keysym_to_keycode(Xlib.XK.string_to_keysym(key))
+
+    def type_text(self, text):
+        for char in text:
+            if char.isupper():
+                state = Xlib.X.ShiftMask
+            else:
+                state = 0
+            self.send_key(char, state=state)
+        self.send_key_release(key="NoSymbol")  # TODO not working without this?
+
+    def send_key(self, key, state=0):
+        self._send_key_event(key, state=state)
+        self.send_key_release(key="NoSymbol")  # TODO not working without this?
+
+    def _send_key_event(self, key, state=0):
+        window = self.get_current_window()
+        key_code = self.get_key_code(key)
+        self.send_key_press(window=window, key_code=key_code, state=state)
+        self.send_key_release(window=window, key_code=key_code, state=state)
+
+    def send_key_press(self, window=None, key=None, key_code=None, state=0):
+        if not window:
+            window = self.get_current_window()
+        if not key_code:
+            key_code = self.get_key_code(key)
+        key_press_event = Xlib.protocol.event.KeyPress(
+            time=int(time.time()),
+            root=self.root,
+            window=window,
+            same_screen=0, child=Xlib.X.NONE,
+            root_x=0, root_y=0, event_x=0, event_y=0,
+            state=state,
+            detail=key_code
+        )
+        window.send_event(key_press_event, propagate=True)
+
+    def send_key_release(self, window=None, key=None, key_code=None, state=0):
+        if not window:
+            window = self.get_current_window()
+        if not key_code:
+            key_code = self.get_key_code(key)
+        key_release_event = Xlib.protocol.event.KeyRelease(
+            time=int(time.time()),
+            root=self.root,
+            window=window,
+            same_screen=0, child=Xlib.X.NONE,
+            root_x=0, root_y=0, event_x=0, event_y=0,
+            state=state,
+            detail=key_code
+        )
+        window.send_event(key_release_event, propagate=True)
+
+
+if __name__ == "__main__":
+    mapper = Mapper()
+    mapper.main()
