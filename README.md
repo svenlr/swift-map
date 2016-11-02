@@ -4,10 +4,10 @@ xkb keyboard.<br>
 Specify a key (by default Caps Lock), disable its normal behaviour and use it as an activator for
 another key layer on your keyboard.<br>
 This also allows usage of navigation keys such as Up, Down, Left and Right on the home row.<br>
-The new key layer can be customized using a JSON configuration file
+The new key layer can be customized using the JSON configuration file.
 
 ## Installation
-If you like to use command and string injection, please install python-xlib<br>
+- If you like to use command and string injection, please install python-xlib<br>
 (if you do not have superuser privileges, you can also download it and compile it yourself)
 <pre>$ sudo apt-get install python-xlib</pre>
 
