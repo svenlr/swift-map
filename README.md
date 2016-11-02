@@ -80,7 +80,6 @@ This shows an example found in the default configuration, which allows you to ex
     ]
 }
 ...
-}
 </pre>
 Note that this method requires unused key codes in your keymap, which are limited.<br>
 This will be improved in the future.
