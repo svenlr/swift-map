@@ -18,7 +18,7 @@ The new key layer can be customized using the JSON configuration file.
 <pre>$ cd path_of_your_choice</pre>
 
 - make scripts executable
-<pre>$ chmod +x mainloop.py resume.py lib/xdotool/xdotool</pre>
+<pre>$ chmod +x mainloop.py resume.py</pre>
 
 - test it
 <pre>$ ./mainloop.py &</pre>
