@@ -12,7 +12,7 @@ The new key layer can be customized using the JSON configuration file.
 <pre>$ sudo apt-get install python-xlib</pre>
 
 - clone this repository to a path_of_your_choice.
-<pre>$ git clone https://github.com/soeiner/homerow-arrowkeys.git path_of_your_choice</pre>
+<pre>$ git clone https://github.com/soeiner/keyboard-customizer.git path_of_your_choice</pre>
 
 - change working directory to the installation directory
 <pre>$ cd path_of_your_choice</pre>
