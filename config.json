@@ -77,6 +77,15 @@
             {"key": "Left", "times": 7}
           ]
         }
+      },
+      {
+        "key_code": 38,
+        "mapped_sequences": {
+          "down": [
+            {"text": "\\par{}"},
+            {"key": "Down", "times": 1}
+          ]
+        }
       }
     ]
   },
