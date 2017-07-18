@@ -1,5 +1,5 @@
 {
-  "usage0": "[overlays] overlay# > xkb_code: the key to activate the overlay. 'disabled' to disable the overlay",
+  "usage0": "[overlays] key: the key to activate the overlay. 'disabled' to disable the overlay",
   "usage1": "[mapping] mapping works as follows: when 'key_code' is pressed, 'mapped_keysym' is generated",
   "usage2": "[mapped] you may also define a 'mapped_key_label' directly, which will be pressed instead of 'key_code'",
   "usage3": "[xkb_code] a list of xkb_codes and their current mappings will be available after first execution",
@@ -59,6 +59,24 @@
       {
         "key_code": 47,
         "mapped_key_label": "END"
+      },
+      {
+        "key_code": 11,
+        "mapped_sequences": {
+          "down": [
+            {"text": "\\glqq{} \\grqq{}"},
+            {"key": "Left", "times": 7}
+          ]
+        }
+      },
+      {
+        "key_code": 12,
+        "mapped_sequences": {
+          "down": [
+            {"text": "\\flqq{} \\frqq{}"},
+            {"key": "Left", "times": 7}
+          ]
+        }
       }
     ]
   },

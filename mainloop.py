@@ -7,23 +7,27 @@ import socket
 import sys
 import time
 
-from options import read_file
-
 try:
     import pyxhook
     import Xlib, Xlib.protocol, Xlib.display, Xlib.X
+
     xlib_support = True
 except Exception as e:
     pyxhook = Xlib = None
     xlib_support = False
     print "Warning:"
     print e
-    print "No X library support. Command as well as string overlays will not be possible."
+    print "No X library support. Command overlays as well as string overlays will not be possible."
     print "You may want to install python-xlib."
     time.sleep(1)
 
 default_path = os.path.dirname(__file__)
 os.chdir(default_path)
+
+
+def read_file(file_):
+    with open(file_) as f:
+        return f.read()
 
 
 class Mapper:
@@ -92,7 +96,7 @@ class Mapper:
 
     def get_interpret_section(self, stroke):
         re_stroke = stroke.replace("+", "\+").replace("(", "\(").replace(")", "\)")
-        interpret_section = re.search(r"interpret *" + re_stroke + r" *\{[^}]*\}( |\n)*;", self.keymap_data).group(0)
+        interpret_section = re.search(r"interpret *" + re_stroke + r" *\{[^}]*\}([ \n])*;", self.keymap_data).group(0)
         return interpret_section
 
     def get_key_label(self, key_code):
@@ -238,9 +242,6 @@ class Mapper:
                 else:
                     print "Failed creating new empty NoSymbol section for ", mapping
 
-    # def create_virtual_typing_map(self):
-
-
     def configure_keymap(self):
         self.capture_keymap(self.keymap_file)
 
@@ -304,7 +305,7 @@ class CommandOverlay:
         elif overlay_enable_mode == "toggle":
             self.on_overlay_key = self.toggle_overlay_key
 
-        self.key_faker = KeyFaker()
+        self.key_faker = None
 
         self.overlay_active = False
 
@@ -315,6 +316,7 @@ class CommandOverlay:
 
     def start_hooking_keyboard(self):
         self.hookManager.start()
+        self.key_faker = KeyFaker()
 
     def stop_hooking_keyboard(self):
         self.hookManager.cancel()
@@ -337,10 +339,16 @@ class CommandOverlay:
                 if isinstance(command, str):
                     os.system(command)
                 elif isinstance(command, dict):
-                    if "text" in command:
-                        self.key_faker.type_text(command["text"])
-                    if "key" in command:
-                        self.key_faker.send_key(command["key"])
+                    times = 1
+                    if "times" in command:
+                        times = command["times"]
+                    for i in range(times):
+                        if "text" in command:
+                            self.key_faker.type_text(command["text"])
+                        if "key" in command:
+                            self.key_faker.send_key(command["key"])
+                        if "key_code" in command:
+                            self.key_faker.send_key_code(command["key_code"])
             except Exception as e:
                 print "Error executing user defined command: ", e
 
@@ -349,47 +357,64 @@ class CommandOverlay:
             self.overlay_active = not self.overlay_active
 
     def hold_overlay_key(self, event_message):
-        if event_message == "key down":
-            self.overlay_active = True
-        else:
-            self.overlay_active = False
+        self.overlay_active = (event_message == "key down")
 
 
 class KeyFaker:
+    special_character_mapping = {
+        '@': 'at', '`': 'grave', '\t': 'Tab', '|': 'bar', '\n': 'Return', '\r': 'Return',
+        '~': 'asciitilde',
+        '{': 'braceleft', '[': 'bracketleft', ']': 'bracketright', '\\': 'backslash',
+        '_': 'underscore',
+        '^': 'asciicircum', '!': 'exclam', ' ': 'space', '#': 'numbersign', '"': 'quotedbl',
+        '%': 'percent', '$': 'dollar',
+        "'": 'apostrophe', '&': 'ampersand', ')': 'parenright', '(': 'parenleft', '+': 'plus',
+        '*': 'asterisk',
+        '-': 'minus', ',': 'comma', '/': 'slash', '.': 'period', '\\e': 'Escape',
+        '}': 'braceright', ';': 'semicolon',
+        ':': 'colon', '=': 'equal', '<': 'less', '?': 'question', '>': 'greater'
+    }
+
     def __init__(self):
         self.display = Xlib.display.Display()
         self.root = self.display.screen().root
 
-    def get_current_window(self):
+    def __current_window(self):
         return self.display.get_input_focus()._data["focus"]
 
-    def get_key_code(self, key):
-        return self.display.keysym_to_keycode(Xlib.XK.string_to_keysym(key))
+    def __char_to_key_code(self, char):
+        key_symbol = Xlib.XK.string_to_keysym(char)
+        if key_symbol == 0:
+            key_symbol = Xlib.XK.string_to_keysym(self.special_character_mapping[char])
+        return self.display.keysym_to_keycode(key_symbol)
+
+    def send_key(self, key_string):
+        self.send_key_code(self.display.keysym_to_keycode(Xlib.XK.string_to_keysym(key_string)))
 
     def type_text(self, text):
         for char in text:
-            if char.isupper():
+            if char.isupper() or "{}<>()_\"?~!$%^&*+|:@#".find(char) >= 0:
                 state = Xlib.X.ShiftMask
             else:
                 state = 0
-            self.send_key(char, state=state)
-        self.send_key_release(key="NoSymbol")  # TODO not working without this?
+            self.__send_character(char, state=state)
+        self.display.sync()
 
-    def send_key(self, key, state=0):
-        self._send_key_event(key, state=state)
-        self.send_key_release(key="NoSymbol")  # TODO not working without this?
+    def send_key_code(self, key_code, state=0):
+        window = self.__current_window()
+        self.__key_press(window=window, key_code=key_code, state=state)
+        self.__key_release(window=window, key_code=key_code, state=state)
+        self.__key_release(key_code=0)
 
-    def _send_key_event(self, key, state=0):
-        window = self.get_current_window()
-        key_code = self.get_key_code(key)
-        self.send_key_press(window=window, key_code=key_code, state=state)
-        self.send_key_release(window=window, key_code=key_code, state=state)
+    def __send_character(self, character, state=0):
+        key_code = self.__char_to_key_code(character)
+        self.send_key_code(key_code, state=state)
 
-    def send_key_press(self, window=None, key=None, key_code=None, state=0):
-        if not window:
-            window = self.get_current_window()
-        if not key_code:
-            key_code = self.get_key_code(key)
+    def __key_press(self, window=None, key=None, key_code=None, state=0):
+        if window is None:
+            window = self.__current_window()
+        if key_code is None:
+            key_code = self.__char_to_key_code(key)
         key_press_event = Xlib.protocol.event.KeyPress(
             time=int(time.time()),
             root=self.root,
@@ -401,11 +426,11 @@ class KeyFaker:
         )
         window.send_event(key_press_event, propagate=True)
 
-    def send_key_release(self, window=None, key=None, key_code=None, state=0):
-        if not window:
-            window = self.get_current_window()
-        if not key_code:
-            key_code = self.get_key_code(key)
+    def __key_release(self, window=None, key=None, key_code=None, state=0):
+        if window is None:
+            window = self.__current_window()
+        if key_code is None:
+            key_code = self.__char_to_key_code(key)
         key_release_event = Xlib.protocol.event.KeyRelease(
             time=int(time.time()),
             root=self.root,
@@ -416,7 +441,6 @@ class KeyFaker:
             detail=key_code
         )
         window.send_event(key_release_event, propagate=True)
-
 
 if __name__ == "__main__":
     mapper = Mapper()
