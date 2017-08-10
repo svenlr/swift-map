@@ -1,36 +1,44 @@
-# Home Row Computing Keyboard Overlay on Linux (xkb)
-This little tool allows you to create an overlay (keys, strings, commands) for your
-xkb keyboard.<br>
-Specify a key (by default Caps Lock), disable its normal behaviour and use it as an activator for
-another key layer on your keyboard.<br>
-This also allows usage of navigation keys such as Up, Down, Left and Right on the home row.<br>
-The new key layer can be customized using the JSON configuration file.
+# Swift Map - Home Row Computing Keyboard Overlay
+Arrow keys and other navigation keys accessible while staying on the home row!<br>
+How? Specify a key, disable its normal behaviour and use it as an activator for
+another key layer on your keyboard (this program comes with a default configuration using CapsLock).<br>
+You can use the layout on both <strong>Linux and Windows</strong> without administrator rights!
 
-## Installation
-- If you like to use command and string injection, please install python-xlib<br>
+## Installation on Linux
+- (optional) If you like to use command and string injection, please install python-xlib<br>
 (if you do not have superuser privileges, you can also download it and compile it yourself)
 <pre>$ sudo apt-get install python-xlib</pre>
 
-- clone this repository to a path_of_your_choice.
-<pre>$ git clone https://github.com/soeiner/keyboard-customizer.git</pre>
+- clone this repository.
+<pre>$ git clone https://github.com/svenlr/swift-map.git</pre>
 
 - change working directory to the installation directory
-<pre>$ cd keyboard-customizer</pre>
+<pre>$ cd swift-map</pre>
 
 - make scripts executable
-<pre>$ chmod +x mainloop.py resume.py</pre>
+<pre>$ chmod +x mainloop.py</pre>
 
 - test it
 <pre>$ ./mainloop.py &</pre>
-now open an editor and try pressing some keys with and without caps held down.
+now open an editor and try pressing ijkl with and without caps held down.
 
 - add it to start up (tested on Ubuntu based systems)<br>
 Go to the launcher and open the program 'Startup Applications'.<br>Click on 'Add'.<br>Enter some name.<br>Click on 'Browse'.<br>Navigate to 'mainloop.py'.
 
-- add it to resume directory so the overlays still work after resume
-<pre>$ sudo cp resume.py /etc/pm/sleep.d/</pre>
+<!-- - add it to resume directory so the overlays still work after resume
+<pre>$ sudo cp resume.py /etc/pm/sleep.d/</pre> -->
 
-## Configuration File
+## Usage on Windows
+At the moment, I just recreated the default layout using a forked AutoHotKey script as a suggestion for the usage on Windows.
+- install [AutoHotKey](https://autohotkey.com/download/) - or use the [zip version](https://autohotkey.com/download/ahk.zip) if you don't have administrator rights on your system
+- download the <a href="https://gist.github.com/svenlr/2e09166ae6b70f0fcf8c897b7e7d4be8">AutoHotKey CapsLock Remapping .ahk Script (DE layout)</a> (important: Save in ANSI encoding! Notepad++ can do it) (script needs some modification for english speakers as ö does not exist)
+- place a batch script with the following content in the user autostart folder (%appdata%\Microsoft\Windows\Start Menu\Programs\Startup)
+<pre>
+C:\path\to\autohotkey.exe \path\to\capslock_remapping.ahk
+</pre>
+
+## Configuration File (Linux only)
+The new key layer can be customized using a JSON configuration file on Linux.<br>
 A default configuration file is already included. Add more mappings and functionality by editing it.<br>
 There are three types of mapping:
 
@@ -59,7 +67,6 @@ Then it creates a 'Cross Mapping'.
 },
 ...
 </pre>
-(Key code 16 is mapped to 7, AltGr+7 creates braceleft on the de layout)<br>
 Note that this method requires unused key codes in your keymap, which are limited.
 
 ### Command and String Mapping
@@ -67,18 +74,18 @@ This requires the installation of `python-xlib`.<br>
 Map a key code to a set of commands, also including shell commands.<br>
 Define two sequences of commands, one for key up and one for key down.<br>
 A command can be a string (evaluated as shell command), or an object in JSON notation.<br>
-This shows an example found in the default configuration, which allows you to execute the command
-"fuck" (https://github.com/nvbn/thefuck) with just two key strokes ;)
+The following example can also be found in the default configuration file and allows us to make german quotes in LaTeX with only two key strokes.
 <pre>
 ...
 {
-  "key_code": 41,
+  "key_code": 11,
   "mapped_sequences": {
     "down": [
-      {"text": "fuck"},
-      {"key": "Return"}
+      {"text": "\\glqq{} \\grqq{}"},
+      {"key": "Left", "times": 7}
     ]
-}
+  }
+},
 ...
 </pre>
 Note that this method requires unused key codes in your keymap, which are limited.<br>
