@@ -17,7 +17,8 @@ except Exception as e:
     xlib_support = False
     print "Warning:"
     print e
-    print "No X library support. Command overlays as well as string overlays will not be possible."
+    print "No X library support. Snippets and commands are not supported without python-xlib."
+    print "You can still use key remapping as usual."
     print "You may want to install python-xlib."
     time.sleep(1)
 
@@ -68,9 +69,6 @@ class Mapper:
         except Exception as e:
             print e, ". Another instance of this program is already running. Kill it using 'pkill python2.7' and " \
                      "restart the program if you want suspend/resume and command overlays to work correctly."
-
-    def xdotool(self, args):
-        os.system("lib/xdotool/xdotool " + args)
 
     def store_used_key_labels(self):
         file_data = ""
