@@ -48,6 +48,7 @@ class Mapper:
             time.sleep(5)
 
         self.configure_keymap()
+        os.system("gsettings set org.gnome.settings-daemon.plugins.keyboard active false")
 
         try:
             s = socket.socket()
