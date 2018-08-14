@@ -332,22 +332,44 @@ class CommandOverlay:
                 sequence = self.command_mapping[event.ScanCode][event.MessageName]
                 self.execute_command_sequence(sequence)
 
+    def __parse_modifier_state(self, command):
+        modifier_state = 0
+        if "modifiers" in command:
+            modifiers = []
+            if isinstance(command["modifiers"], list):
+                modifiers = command["modifiers"]
+            if isinstance(command["modifiers"], basestring):
+                modifiers = command["modifiers"].split("+")
+            if "Shift" in modifiers:
+                modifier_state = modifier_state | Xlib.X.ShiftMask
+            if "Control" in modifiers:
+                modifier_state = modifier_state | Xlib.X.ControlMask
+            if "Alt" in modifiers:
+                modifier_state = modifier_state | Xlib.X.Mod1Mask
+        return modifier_state
+
     def execute_command_sequence(self, sequence):
         for command in sequence:
             try:
-                if isinstance(command, str):
+                if isinstance(command, basestring):
                     os.system(command)
                 elif isinstance(command, dict):
                     times = 1
                     if "times" in command:
                         times = command["times"]
+                    text = command["text"] if "text" in command else None
+                    key = command["key"] if "key" in command else None
+                    key_code = command["key_code"] if "key_code" in command else None
+                    modifier_state = self.__parse_modifier_state(command)
                     for i in range(times):
-                        if "text" in command:
-                            self.key_faker.type_text(command["text"])
-                        if "key" in command:
-                            self.key_faker.send_key(command["key"])
-                        if "key_code" in command:
-                            self.key_faker.send_key_code(command["key_code"])
+                        if text:
+                            self.key_faker.type_text(text)
+                            if modifier_state != 0:
+                                print "Cannot combine text typing with modifiers."
+                        elif key:
+                            self.key_faker.send_key(key, state=modifier_state)
+                        elif key_code:
+                            self.key_faker.send_key_code(key_code, state=modifier_state)
             except Exception as e:
                 print "Error executing user defined command: ", e
 
@@ -387,8 +409,8 @@ class KeyFaker:
             key_symbol = Xlib.XK.string_to_keysym(self.special_character_mapping[char])
         return self.display.keysym_to_keycode(key_symbol)
 
-    def send_key(self, key_string):
-        self.send_key_code(self.display.keysym_to_keycode(Xlib.XK.string_to_keysym(key_string)))
+    def send_key(self, key_string, state=0):
+        self.send_key_code(self.display.keysym_to_keycode(Xlib.XK.string_to_keysym(key_string)), state=state)
 
     def type_text(self, text):
         for char in text:
