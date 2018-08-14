@@ -330,7 +330,7 @@ class CommandOverlay:
         else:
             if self.overlay_active and event.ScanCode in self.command_mapping:
                 sequence = self.command_mapping[event.ScanCode][event.MessageName]
-                self.execute_command_sequence(sequence)
+                self.execute_command_sequence(sequence, current_modifier_state=event.XLibEvent.state)
 
     def __parse_modifier_state(self, command):
         modifier_state = 0
@@ -338,8 +338,11 @@ class CommandOverlay:
             modifiers = []
             if isinstance(command["modifiers"], list):
                 modifiers = command["modifiers"]
+            # when the user gave us a plus-separated string with modifiers, split them to obtain a list
             if isinstance(command["modifiers"], basestring):
                 modifiers = command["modifiers"].split("+")
+            # remove space before and after modifier
+            modifiers = [mod.strip(" ") for mod in modifiers]
             if "Shift" in modifiers:
                 modifier_state = modifier_state | Xlib.X.ShiftMask
             if "Control" in modifiers:
@@ -348,7 +351,7 @@ class CommandOverlay:
                 modifier_state = modifier_state | Xlib.X.Mod1Mask
         return modifier_state
 
-    def execute_command_sequence(self, sequence):
+    def execute_command_sequence(self, sequence, current_modifier_state=0):
         for command in sequence:
             try:
                 if isinstance(command, basestring):
@@ -360,7 +363,9 @@ class CommandOverlay:
                     text = command["text"] if "text" in command else None
                     key = command["key"] if "key" in command else None
                     key_code = command["key_code"] if "key_code" in command else None
-                    modifier_state = self.__parse_modifier_state(command)
+                    # OR the user-added modifiers with the current modifier state,
+                    # so that additionally pressed modifier do not get lost
+                    modifier_state = self.__parse_modifier_state(command) | current_modifier_state
                     for i in range(times):
                         if text:
                             self.key_faker.type_text(text)
