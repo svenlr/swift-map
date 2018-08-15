@@ -246,7 +246,7 @@ class HookManager(threading.Thread):
             MessageName = "key down"
         elif event.type == X.KeyRelease:
             MessageName = "key up"
-        return pyxhookkeyevent(storewm["handle"], storewm["name"], storewm["class"], self.lookup_keysym(keysym), self.asciivalue(keysym), False, event.detail, MessageName)
+        return pyxhookkeyevent(storewm["handle"], storewm["name"], storewm["class"], self.lookup_keysym(keysym), self.asciivalue(keysym), False, event.detail, MessageName, event)
     
     def makemousehookevent(self, event):
         storewm = self.xwindowinfo()
@@ -308,7 +308,7 @@ class pyxhookkeyevent:
     MessageName = "key down", "key up".
     """
     
-    def __init__(self, Window, WindowName, WindowProcName, Key, Ascii, KeyID, ScanCode, MessageName):
+    def __init__(self, Window, WindowName, WindowProcName, Key, Ascii, KeyID, ScanCode, MessageName, XLibEvent):
         self.Window = Window
         self.WindowName = WindowName
         self.WindowProcName = WindowProcName
@@ -317,6 +317,7 @@ class pyxhookkeyevent:
         self.KeyID = KeyID
         self.ScanCode = ScanCode
         self.MessageName = MessageName
+        self.XLibEvent = XLibEvent
     
     def __str__(self):
         return "Window Handle: " + str(self.Window) + "\nWindow Name: " + str(self.WindowName) + "\nWindow's Process Name: " + str(self.WindowProcName) + "\nKey Pressed: " + str(self.Key) + "\nAscii Value: " + str(self.Ascii) + "\nKeyID: " + str(self.KeyID) + "\nScanCode: " + str(self.ScanCode) + "\nMessageName: " + str(self.MessageName) + "\n"
