@@ -86,14 +86,6 @@
             {"key": "Down", "times": 1}
           ]
         }
-      },
-      {
-        "key_code": 25,
-        "mapped_sequences": {
-          "down": [
-            {"key": "Right", "modifiers": "Control"}
-          ]
-        }
       }
     ]
   },
