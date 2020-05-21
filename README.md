@@ -48,15 +48,15 @@ You can use the layout on both **Linux and Windows** without administrator right
 The new key layer can be customized using a JSON configuration file on Linux (`config.json`).
 A default configuration file is already included. Add more mappings and functionality by editing it.
 
-- It is recommended to edit the JSON configuration file with an IDE/Editor that supports JSON, for example any JavaScript IDE/Editor should work but also PyCharm should support it.
+- It is recommended to edit the JSON configuration file with an IDE/Editor that supports JSON, for example any JavaScript IDE/Editor should work. PyCharm works, too.
 - You can use the `xev` command line tool to obtain the `"key_code"` for the keys that you want to remap.
 `xev` also prints the key symbols (`mapped_keysym`) such as `braceleft`. For `xev` to work, you need to have focus (click on) the box window that appears after you started `xev`.
 
 Choosing a mapping type:
 - Example: If you want to make caps + r act like a Esc key use Cross Mapping ("mapped_key_label"). 
-Cross Mapping should be used when the target key (in this case Esc) is available without modifiers on your keyboard. 
-- Example: If you want to assign symbols like / ( ) = to keys then use Key Symbol Mapping ("mapped_keysym").
-Key Symbol Mapping should be used when the target symbol (in this case / ( ) =) is not available without modifiers on your keyboard. 
+_Cross Mapping_ should be used when the target key (in this case Esc) is available without modifiers on your keyboard. 
+- Example: If you want to assign symbols like `/` `(` `)` `=` to keys then use Key Symbol Mapping ("mapped_keysym").
+_Key Symbol Mapping_ should be used when the target symbol (in this case `/` `(` `)` `=`) is **not** available without modifiers on your keyboard. 
 
 ### Cross Mapping (`mapped_key_label`)
 
