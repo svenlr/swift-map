@@ -29,27 +29,19 @@ You can use the layout on both **Linux and Windows** without administrator right
 
 - test it
   ```bash
-  ./mainloop.py &
+  ./mainloop.py nosleep
   ```
   now open an editor and try pressing ijkl with and without caps held down.
 
-- add it to start up (tested on Ubuntu based systems)<br>
-  Go to the launcher and open the program 'Startup Applications'.<br>Click on 'Add'.<br>Enter some name.<br>Click on 'Browse'.<br>Navigate to 'mainloop.py'.
+- add it to start up (tested on Ubuntu 18.04):
+  1. Go to the launcher and open the program 'Startup Applications'.
+  2. Click on 'Add'.
+  3. Enter some name, such as Keyboard Remap.
+  4. Click on 'Browse'.
+  5. Navigate to 'mainloop.py'.
 
 <!-- - add it to resume directory so the overlays still work after resume
 <pre>$ sudo cp resume.py /etc/pm/sleep.d/</pre> -->
-
-## Usage on Windows
-
-At the moment, I just recreated the default layout using a forked AutoHotKey script as a suggestion for the usage on Windows.
-
-- install [AutoHotKey](https://autohotkey.com/download/) - or use the [zip version](https://autohotkey.com/download/ahk.zip) if you don't have administrator rights on the system
-- download the [AutoHotKey CapsLock Remapping .ahk Script (DE layout)](https://gist.github.com/svenlr/2e09166ae6b70f0fcf8c897b7e7d4be8) (**it will be downloaded UTF-8 encoded and must be converted to ANSI manually!** Can be done using e.g. Notepad++ Portable)
-- place a batch script with the following content in the user autostart folder (%appdata%\Microsoft\Windows\Start Menu\Programs\Startup)
-
-```bat
-C:\path\to\autohotkey.exe C:\path\to\capslock_remapping.ahk
-```
 
 ## Configuration File (Linux only)
 
@@ -72,9 +64,9 @@ Simulate pressing another key on your keyboard with the overlay. You can create 
 
 **Example:** We want to map Caps+o to PageDown.
 (i.e., for every application, it will look as if you pressed the PageDown arrow key when you press Caps+o).
-1. In order to find the key code for o, you type `xev` in command line, focus the appearing window and then press o. The key code is printed in the terminal, it's 32 in the example.
-2. With `xev`, find the key code for the PageDown - in the example it's 117.
-3. Now, find the key label: `cat /usr/share/X11/xkb/keycodes/evdev | grep 117` , which prints ```<PGDN> = 117;```
+1. In order to find the key code for o, you type `xev` in command line, focus the appearing window and then press o. The key code is printed in the terminal, usually 32.
+2. With `xev`, find the key code for the PageDown - usually 117.
+3. Now, find the key label: `cat /usr/share/X11/xkb/keycodes/evdev | grep " 117;"` , which prints ```<PGDN> = 117;```
 
 Here is the resulting JSON for remapping Caps+o to the PageDown key (PGDN):
 ```json
@@ -128,3 +120,15 @@ The following example can also be found in the default configuration file and al
 ```
 
 Note that for the moment, the number of mappings of this kind is usually limited by about 10.
+
+## Usage on Windows
+
+At the moment, I just recreated the default layout using a forked AutoHotKey script as a suggestion for the usage on Windows.
+
+- install [AutoHotKey](https://autohotkey.com/download/) - or use the [zip version](https://autohotkey.com/download/ahk.zip) if you don't have administrator rights on the system
+- download the [AutoHotKey CapsLock Remapping .ahk Script (DE layout)](https://gist.github.com/svenlr/2e09166ae6b70f0fcf8c897b7e7d4be8) (**it will be downloaded UTF-8 encoded and must be converted to ANSI manually!** Can be done using e.g. Notepad++ Portable)
+- place a batch script with the following content in the user autostart folder (%appdata%\Microsoft\Windows\Start Menu\Programs\Startup)
+
+```bat
+C:\path\to\autohotkey.exe C:\path\to\capslock_remapping.ahk
+```
