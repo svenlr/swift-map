@@ -78,7 +78,7 @@ Here is the resulting JSON for remapping Caps+o to the PageDown key (PGDN):
 ...
 ```
 
-### Key Symbol Mapping ("mapped_keysym")
+### Key Symbol Mapping (`mapped_keysym`)
 
 Use this if you want to generate a key that is not available on your keyboard without additional modifiers or not available at all.
 **Example:** We want to map Caps+7 to the left brace `{`.
