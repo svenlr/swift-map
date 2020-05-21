@@ -132,3 +132,6 @@ At the moment, I just recreated the default layout using a forked AutoHotKey scr
 ```bat
 C:\path\to\autohotkey.exe C:\path\to\capslock_remapping.ahk
 ```
+
+## Thanks
+- [arensonzz](https://github.com/arensonzz) for writing documentation.
