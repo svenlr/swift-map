@@ -4,6 +4,8 @@
   "usage2": "[mapped] you may also define a 'mapped_key_label' directly, which will be pressed instead of 'key_code'",
   "usage3": "[xkb_code] a list of xkb_codes and their current mappings will be available after first execution",
   "usage4": "[mode] if the overlay activation key should act in 'toggle' or 'hold' mode (RE-LOGIN required)",
+  "usage5": "[more key_labels?] If you run out of key labels for remapping, use allow_repurpose_key_labels (Issue#10)",
+  "allow_repurpose_key_labels": [],
   "overlay1": {
     "key": "CAPS",
     "mode": "hold",

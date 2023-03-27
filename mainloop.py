@@ -123,12 +123,20 @@ class Mapper:
 
     def get_unused_key_labels(self):
         all_codes = self.get_key_labels()
-        codes = []
+        unused_key_labels = []
         xkb_symbols_section = self.get_xkb_symbols_section()
         for key_label in all_codes:
             if key_label not in xkb_symbols_section:
-                codes.append(key_label)
-        return codes
+                unused_key_labels.append(key_label)
+            else:
+                try:
+                    key_section = self.get_keysym_section(key_label)
+                    if key_section.split("[")[1].split("]")[0].strip(" ") == "NoSymbol":
+                        # print("Found NoSymbol key_label, interpreting as unused: " + key_label)
+                        unused_key_labels.append(key_label)
+                except AttributeError:
+                    pass
+        return unused_key_labels
 
     def get_key_labels(self):
         codes = []
@@ -137,7 +145,9 @@ class Mapper:
                 key_label = self.get_key_label(i)
                 codes.append(key_label)
             except AttributeError as e:
-                print "Key code #" + str(i) + " has no key_label defined in xkb_keymap."
+                # TODO we could create a key_label for this missing code to gain an additional key_label for remapping!
+                # print "Key code #" + str(i) + " has no key_label defined in xkb_keymap."
+                pass
         return codes
 
     def has_overlay(self, key_label):
@@ -153,7 +163,7 @@ class Mapper:
             if self.has_overlay(key_label):
                 old_overlay = re.search(r",\n *overlay[0-9] *= *<.{2,6}>", old_key_def).group(0)
                 new_key_def = new_key_def.replace(old_overlay, "")
-                print key_label + " CAN NOT HAVE ANOTHER OVERLAY. DELETING PREVIOUS OVERLAY!"
+                # print key_label + " CAN NOT HAVE ANOTHER OVERLAY. DELETING PREVIOUS OVERLAY!"
             new_key_def = new_key_def.replace("}",
                                               ",\n overlay" + str(num_overlay) + " = <" + overlay_key_label + "> \n}")
             self.keymap_data = self.keymap_data.replace(old_key_def, new_key_def)
@@ -201,7 +211,8 @@ class Mapper:
                 else:
                     key_label = available_key_codes.pop()
                     if self.create_keysym_section(key_label, mapping["mapped_keysym"]):
-                        print "Found free (unused) key_label and mapped it now: " + key_label
+                        print("key_code {} -> <{}> (overwritten) -> {}.".format(
+                            mapping["key_code"], key_label, mapping["mapped_keysym"]))
                         mapping["mapped_key_label"] = key_label
                     else:
                         available_key_codes.append(key_label)
@@ -233,6 +244,9 @@ class Mapper:
     def configure_keymap(self):
         self.capture_keymap(self.keymap_file)
 
+        if "allow_repurpose_key_labels" in self.config:
+            # add these here so that they are also removed from the XKB config
+            self.used_key_labels += self.config["allow_repurpose_key_labels"]
         # remove key_labels added during last execution
         while len(self.used_key_labels) > 0:
             previously_used_key_label = self.used_key_labels.pop()
@@ -279,7 +293,9 @@ class Mapper:
             os.remove(filename)
         else:
             print "Error while applying settings."
-        print "INFO: still " + str(len(self.get_unused_key_labels())) + " key_labels available for custom mappings."
+        unused_key_labels = self.get_unused_key_labels()
+        print("\nINFO: still " + str(len(unused_key_labels)) + " key_labels available for custom mappings:")
+        print("\t" + ", ".join(unused_key_labels) + "\n")
 
 
 class CommandOverlay:
