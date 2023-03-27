@@ -198,7 +198,6 @@ class Mapper:
 
     def create_keysym_sections(self, mapping_data):
         available_key_codes = self.get_unused_key_labels()
-        print("available", available_key_codes)
         # Use available key_labels to map user defined key strokes
         for mapping in mapping_data:
             if "mapped_keysym" in mapping:
