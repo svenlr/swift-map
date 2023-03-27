@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3.8
 
 import json
 import os
@@ -16,11 +16,11 @@ try:
 except Exception as e:
     pyxhook = Xlib = None
     xlib_support = False
-    print "Warning:"
-    print e
-    print "No X library support. Snippets and commands are not supported without python-xlib."
-    print "You can still use key remapping as usual."
-    print "You may want to install python-xlib."
+    print("Warning:")
+    print(e)
+    print("No X library support. Snippets and commands are not supported without python-xlib.")
+    print("You can still use key remapping as usual.")
+    print("You may want to install python-xlib.")
     time.sleep(1)
 
 default_path = os.path.dirname(__file__)
@@ -69,8 +69,8 @@ class Mapper:
                         overlay.stop_hooking_keyboard()
                     break
         except Exception as e:
-            print e, ". Another instance of this program is already running. Kill it using 'pkill python2.7' and " \
-                     "restart the program if you want suspend/resume and command overlays to work correctly."
+            print(e, ". Another instance of this program is already running. Kill it using \'pkill python2.7\' and "
+                     "restart the program if you want suspend/resume and command overlays to work correctly.")
 
     def store_used_key_labels(self):
         file_data = ""
@@ -137,7 +137,7 @@ class Mapper:
                 key_label = self.get_key_label(i)
                 codes.append(key_label)
             except AttributeError as e:
-                print "Key code #" + str(i) + " has no key_label defined in xkb_keymap."
+                print("Key code #" + str(i) + " has no key_label defined in xkb_keymap.")
         return codes
 
     def has_overlay(self, key_label):
@@ -153,13 +153,13 @@ class Mapper:
             if self.has_overlay(key_label):
                 old_overlay = re.search(r",\n *overlay[0-9] *= *<.{2,6}>", old_key_def).group(0)
                 new_key_def = new_key_def.replace(old_overlay, "")
-                print key_label + " CAN NOT HAVE ANOTHER OVERLAY. DELETING PREVIOUS OVERLAY!"
+                print(key_label + " CAN NOT HAVE ANOTHER OVERLAY. DELETING PREVIOUS OVERLAY!")
             new_key_def = new_key_def.replace("}",
                                               ",\n overlay" + str(num_overlay) + " = <" + overlay_key_label + "> \n}")
             self.keymap_data = self.keymap_data.replace(old_key_def, new_key_def)
             return True
         except Exception as e:
-            print e
+            print(e)
             return False
 
     def disable_overlay_key_toggling(self, num_overlay):
@@ -183,7 +183,7 @@ class Mapper:
             self.used_key_labels.append(key_label)
             return True
         except AttributeError as e:
-            print e
+            print(e)
             return False
 
     def create_keysym_sections(self, mapping_data):
@@ -192,16 +192,16 @@ class Mapper:
         for mapping in mapping_data:
             if "mapped_keysym" in mapping:
                 if len(available_key_codes) == 0:
-                    print "============================================================"
-                    print "NO FREE KEY CODES AVAILABLE FOR CHARACTER MAPPING!!! "
-                    print "please log back in again"
-                    print "if this problem persists, you may also have exceeded the number of available key codes"
-                    print "============================================================"
+                    print("============================================================")
+                    print("NO FREE KEY CODES AVAILABLE FOR CHARACTER MAPPING!!! ")
+                    print("please log back in again")
+                    print("if this problem persists, you may also have exceeded the number of available key codes")
+                    print("============================================================")
                     return False
                 else:
                     key_label = available_key_codes.pop()
                     if self.create_keysym_section(key_label, mapping["mapped_keysym"]):
-                        print "Found free (unused) key_label and mapped it now: " + key_label
+                        print("Found free (unused) key_label and mapped it now: " + key_label)
                         mapping["mapped_key_label"] = key_label
                     else:
                         available_key_codes.append(key_label)
@@ -226,9 +226,9 @@ class Mapper:
                     if self.add_overlay_key(key_label, new_key_label, overlay.index):
                         overlay.add_command_mapping(self.get_key_code(new_key_label), sequences)
                     else:
-                        print "Failed mapping commands to ", key_label
+                        print("Failed mapping commands to ", key_label)
                 else:
-                    print "Failed creating new empty NoSymbol section for ", mapping
+                    print("Failed creating new empty NoSymbol section for ", mapping)
 
     def configure_keymap(self):
         self.capture_keymap(self.keymap_file)
@@ -272,14 +272,14 @@ class Mapper:
 
     def load_keymap_file(self, filename):
         self.store_used_key_labels()
-        print "Applying keymap settings..."
+        print("Applying keymap settings...")
         output = os.popen("xkbcomp -xkb %s $DISPLAY" % filename).read()
         if "rror" not in output:
-            print "Successfully applied settings."
+            print("Successfully applied settings.")
             os.remove(filename)
         else:
-            print "Error while applying settings."
-        print "INFO: still " + str(len(self.get_unused_key_labels())) + " key_labels available for custom mappings."
+            print("Error while applying settings.")
+        print("INFO: still " + str(len(self.get_unused_key_labels())) + " key_labels available for custom mappings.")
 
 
 class CommandOverlay:
@@ -407,7 +407,7 @@ class CommandOverlay:
         if isinstance(modifiers, list):
             modifiers_list = modifiers
         # when the user gave us a plus-separated string with modifiers, split them to obtain a list
-        if isinstance(modifiers, basestring):
+        if isinstance(modifiers, str):
             modifiers_list = modifiers.split("+")
         # remove space before and after each modifier
         modifiers_list = [mod.strip(" ") for mod in modifiers_list]
@@ -425,7 +425,7 @@ class CommandOverlay:
     def execute_command_sequence(self, sequence, current_modifier_state=0):
         for command in sequence:
             try:
-                if isinstance(command, basestring):
+                if isinstance(command, str):
                     os.system(command)
                 elif isinstance(command, dict):
                     times = 1
@@ -445,7 +445,7 @@ class CommandOverlay:
                         elif key_code:
                             self.key_faker.send_key_code(key_code, state=modifier_state)
             except Exception as e:
-                print "Error executing user defined command: ", e
+                print("Error executing user defined command: ", e)
 
     def toggle_overlay_key(self, event_message):
         if event_message == "key down":
