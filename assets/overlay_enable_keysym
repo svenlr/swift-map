@@ -1,4 +1,4 @@
 key <####> {
     type= "THREE_LEVEL",
-    symbols[Group1]= [ Overlay$$$$_Enable, Overlay$$$$_Enable, Caps_Lock ]
+    actions[Group1]= [ SetControls(controls=overlay$$$$), SetControls(controls=overlay$$$$) ]
 };

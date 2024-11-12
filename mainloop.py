@@ -162,11 +162,9 @@ class Mapper:
             print(e)
             return False
 
-    def disable_overlay_key_toggling(self, num_overlay):
+    def remove_overlay_key_interpret(self, num_overlay):
         num_overlay = str(num_overlay)
-        self.keymap_data = self.keymap_data.replace(
-            self.get_interpret_section("Overlay%s_Enable+AnyOfOrNone(all)" % num_overlay),
-            read_file("assets/interpret_overlay" + num_overlay))
+        self.keymap_data = self.keymap_data.replace(self.get_interpret_section("Overlay%s_Enable+AnyOfOrNone(all)" % num_overlay), "")
 
     def set_overlay_enable_key(self, key_label, num_overlay):
         # set up modifier key
@@ -254,7 +252,7 @@ class Mapper:
                 self.map_overlay_keys(mapping_data, num_overlay)
 
                 if overlay_key_mode == "hold":
-                    self.disable_overlay_key_toggling(num_overlay)
+                    self.remove_overlay_key_interpret(num_overlay)
 
                 global xlib_support
                 if xlib_support:
