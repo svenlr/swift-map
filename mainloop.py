@@ -96,7 +96,10 @@ class Mapper:
 
     def get_interpret_section(self, stroke):
         re_stroke = stroke.replace("+", "\+").replace("(", "\(").replace(")", "\)")
-        interpret_section = re.search(r"interpret *" + re_stroke + r" *\{[^}]*\}([ \n])*;", self.keymap_data).group(0)
+        groups = re.search(r"interpret *" + re_stroke + r" *\{[^}]*\}([ \n])*;", self.keymap_data)
+        if groups is None:
+            return None
+        interpret_section = groups.group(0)
         return interpret_section
 
     def get_key_label(self, key_code):
@@ -164,7 +167,9 @@ class Mapper:
 
     def remove_overlay_key_interpret(self, num_overlay):
         num_overlay = str(num_overlay)
-        self.keymap_data = self.keymap_data.replace(self.get_interpret_section("Overlay%s_Enable+AnyOfOrNone(all)" % num_overlay), "")
+        interpret_section = self.get_interpret_section("Overlay%s_Enable+AnyOfOrNone(all)" % num_overlay)
+        if interpret_section is not None:
+            self.keymap_data = self.keymap_data.replace(interpret_section, "")
 
     def set_overlay_enable_key(self, key_label, num_overlay):
         # set up modifier key
