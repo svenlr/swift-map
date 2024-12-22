@@ -8,6 +8,8 @@ import sys
 import time
 import itertools
 
+from system_install import generate_keyboard_layout_file_str
+
 try:
     import pyxhook
     import Xlib, Xlib.protocol, Xlib.display, Xlib.X
@@ -44,12 +46,16 @@ class Mapper:
 
         self.overlays = []
 
+        self.created_keys = []
+        self.replaced_keys = []
+
     def main(self):
         if "nosleep" not in sys.argv:
             time.sleep(5)
 
         self.configure_keymap()
-        os.system("gsettings set org.gnome.settings-daemon.plugins.keyboard active false")
+
+        generate_keyboard_layout_file_str(self.get_xkb_symbols_section_name(), self.created_keys, self.replaced_keys)
 
         try:
             s = socket.socket()
@@ -120,6 +126,12 @@ class Mapper:
     def get_xkb_symbols_section(self):
         return re.search(r"xkb_symbols *\".*\" *\{([^{]+(name|key)[^{]+\{[^}]+\};)*", self.keymap_data).group(0)
 
+    def get_xkb_symbols_section_name(self):
+        xkb_symbols_str = self.get_xkb_symbols_section()
+        name = xkb_symbols_str.split("xkb_symbols")[1].split("{")[0]
+        name = name.strip(" ").strip("\t").strip('"')
+        return name
+
     def get_keysym_section(self, key_label):
         key_label = key_label.upper()
         return re.search(r"key <" + key_label + r"> \{[^}]*\};", self.keymap_data).group(0)
@@ -158,7 +170,8 @@ class Mapper:
                 new_key_def = new_key_def.replace(old_overlay, "")
                 print(key_label + " CAN NOT HAVE ANOTHER OVERLAY. DELETING PREVIOUS OVERLAY!")
             new_key_def = new_key_def.replace("}",
-                                              ",\n overlay" + str(num_overlay) + " = <" + overlay_key_label + "> \n}")
+                                              ",   overlay" + str(num_overlay) + " = <" + overlay_key_label + "> \n}")
+            self.replaced_keys.append(new_key_def)
             self.keymap_data = self.keymap_data.replace(old_key_def, new_key_def)
             return True
         except Exception as e:
@@ -175,15 +188,17 @@ class Mapper:
         # set up modifier key
         old_keysym_section = self.get_keysym_section(key_label)
         keysym = read_file("assets/overlay_enable_keysym").replace("####", key_label).replace("$$$$", str(num_overlay))
+        self.replaced_keys.append(keysym)
         self.keymap_data = self.keymap_data.replace(old_keysym_section, keysym)
 
     def create_keysym_section(self, key_label, keys_string):
         try:
-            new_key_data = "\n key <" + key_label + "> {[" + keys_string + "]};"
+            new_key_data = "\n    key <" + key_label + "> {[" + keys_string + "]};"
             xkb_symbols_section = old_xkb_symbols_section = self.get_xkb_symbols_section()
             xkb_symbols_section += new_key_data
             self.keymap_data = self.keymap_data.replace(old_xkb_symbols_section, xkb_symbols_section)
             self.used_key_labels.append(key_label)
+            self.created_keys.append(new_key_data)
             return True
         except AttributeError as e:
             print(e)
@@ -255,9 +270,6 @@ class Mapper:
                 self.create_keysym_sections(mapping_data)
                 self.set_overlay_enable_key(overlay_key_label, num_overlay)
                 self.map_overlay_keys(mapping_data, num_overlay)
-
-                if overlay_key_mode == "hold":
-                    self.remove_overlay_key_interpret(num_overlay)
 
                 global xlib_support
                 if xlib_support:
