@@ -42,7 +42,7 @@ You can use the layout on both **Linux and Windows** without administrator right
   4. Click on 'Browse'.
   5. Navigate to 'mainloop.py'.
 
-- If you have sudo rights, you can permanently install the layout to your layout switcher. This also prevents the keyboard layout from breaking when resuming from sleep or attaching USB devices, etc...
+- If you have sudo rights, you can permanently install the layout to your layout switcher. This also prevents the keyboard layout from breaking when resuming from sleep or attaching USB devices, etc...   
   (Please be aware that the **installation modifies system config files** and the authors take no responsibilities for things breaking because of that)
   ```
   ./mainloop.py install
