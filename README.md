@@ -47,7 +47,8 @@ You can use the layout on both **Linux and Windows** without administrator right
   ```
   ./mainloop.py install
   
-  # Note that the installation alone does not handle snippet or command mappings, running the program on start-up is still required for that.
+  # Note that the installation alone does not handle snippet or command mappings.
+  # Running the program on start-up is still required for that.
   ```
 
 ## Configuration File (Linux only)
