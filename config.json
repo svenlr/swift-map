@@ -61,13 +61,8 @@
         "mapped_key_label": "END"
       },
       {
-        "key_code": 11,
-        "mapped_sequences": {
-          "down": [
-            {"text": "\\glqq{} \\grqq{}"},
-            {"key": "Left", "times": 7}
-          ]
-        }
+        "key_code": 40,
+        "mapped_key_label": "LCTL"
       },
       {
         "key_code": 12,
@@ -75,15 +70,6 @@
           "down": [
             {"text": "\\flqq{} \\frqq{}"},
             {"key": "Left", "times": 7}
-          ]
-        }
-      },
-      {
-        "key_code": 38,
-        "mapped_sequences": {
-          "down": [
-            {"text": "\\par{}"},
-            {"key": "Down", "times": 1}
           ]
         }
       }
