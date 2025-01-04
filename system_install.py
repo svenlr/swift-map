@@ -65,7 +65,7 @@ def install_keyboard_layout_file(contents, new_name):
     print("")
     print(contents)
     print("")
-    cmd = f"sudo cp /tmp/new_xkb_map {get_symbols_install_dir()}{new_name}"
+    cmd = f"sudo -k cp /tmp/new_xkb_map {get_symbols_install_dir()}{new_name}"
     print(f"Enter sudo pw to copy layout to system:\n{cmd}")
     os.system(cmd)
 
@@ -98,14 +98,16 @@ def add_layout_to_rules_xml_file(old_name, new_name):
         raise RuntimeError(
             f"could not find layout with name {old_name} to base description of new layout on"
         )
+    country_list = etree.tostring(country_list).decode("utf-8").strip(" ").strip("\n") if country_list else ""
+    language_list = etree.tostring(language_list).decode("utf-8").strip(" ").strip("\n") if language_list else ""
     new_layout_str = f"""
     <layout>
       <configItem>
         <name>{new_name}</name>
         <shortDescription>{old_desc_short}</shortDescription>
         <description>{old_desc} (hrc)</description>
-        {etree.tostring(country_list).decode("utf-8").strip(" ").strip("\n") if country_list else ""}
-        {etree.tostring(language_list).decode("utf-8").strip(" ").strip("\n") if language_list else ""}        
+        {country_list}
+        {language_list}        
       </configItem>
     </layout>
     """
@@ -121,7 +123,7 @@ def add_layout_to_rules_xml_file(old_name, new_name):
     
     with open("/tmp/new_evdev.xml", "w+") as f:
         f.write(new_full_xml)
-    cmd = f"sudo cp /tmp/new_evdev.xml {path}"
+    cmd = f"sudo -k cp /tmp/new_evdev.xml {path}"
     print(f"Enter sudo pw to copy new evdev.xml to system:\n{cmd}")
     os.system(cmd)
 
