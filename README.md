@@ -9,7 +9,9 @@ You can use the layout on both **Linux and Windows** without administrator right
 
 - (**optional**) If you like to use command and string injection, please install python-xlib<br>
   ```bash
-  sudo apt install python-xlib
+  sudo apt install python3-xlib
+  # or
+  pip install XLib
   ```
 
 - clone this repository.
@@ -31,17 +33,23 @@ You can use the layout on both **Linux and Windows** without administrator right
   ```bash
   ./mainloop.py nosleep
   ```
-  now open an editor and try pressing ijkl with and without caps held down.
+  To test it, now open an editor and try pressing ijkl with and without CAPS held down.
 
-- add it to start up (tested on Ubuntu 18.04):
+- Add it to start up (tested on Ubuntu 18.04 - 22.04):
   1. Go to the launcher and open the program 'Startup Applications'.
   2. Click on 'Add'.
   3. Enter some name, such as Keyboard Remap.
   4. Click on 'Browse'.
   5. Navigate to 'mainloop.py'.
 
-<!-- - add it to resume directory so the overlays still work after resume
-<pre>$ sudo cp resume.py /etc/pm/sleep.d/</pre> -->
+- If you have sudo rights, you can permanently install the layout to your layout switcher. This also prevents the keyboard layout from breaking when resuming from sleep or attaching USB devices, etc...   
+  (Please be aware that the **installation modifies system config files** and the authors take no responsibilities for things breaking because of that)
+  ```
+  ./mainloop.py install
+  
+  # Note that the installation alone does not handle snippet or command mappings.
+  # Running the program on start-up is still required for that.
+  ```
 
 ## Configuration File (Linux only)
 
